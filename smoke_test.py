@@ -9,9 +9,9 @@ import urllib.request
 ROOT = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent))
 
-from offline_playlist import config
-from offline_playlist.core import db
-from offline_playlist.server import Handler
+import config
+from core import db
+from server import Handler
 from http.server import ThreadingHTTPServer
 
 config.ensure_dirs()

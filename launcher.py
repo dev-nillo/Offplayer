@@ -8,10 +8,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from offline_playlist.server import serve
+from server import serve
 
 
 def main() -> None:

@@ -14,10 +14,9 @@ import shutil
 import subprocess
 import sys
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from offline_playlist import config
+import config
 
 
 def run(cmd: list[str]) -> tuple[int, str]:

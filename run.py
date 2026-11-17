@@ -14,10 +14,9 @@ import argparse
 import pathlib
 import sys
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from offline_playlist.server import serve
+from server import serve
 
 
 def main() -> None:

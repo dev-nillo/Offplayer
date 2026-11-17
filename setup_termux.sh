@@ -17,7 +17,6 @@ echo "==> pedindo acesso ao armazenamento do celular"
 termux-setup-storage
 
 echo "==> instalando dependencias python"
-python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
 echo "==> criando biblioteca em ~/storage/music/Offplayer"

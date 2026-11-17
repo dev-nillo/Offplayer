@@ -20,8 +20,12 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from . import config
-from .core import db, downloader, library, meta as meta_mod
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parent))
+
+import config
+from core import db, downloader, library, meta as meta_mod
 
 WEB_DIR = config.WEB_DIR
 
