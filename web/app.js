@@ -311,11 +311,16 @@ function renderSettings() {
       '<option value="false"' + (!cfg.prefer_topic ? ' selected' : '') + '>não</option></select></div>' +
     '<button class="btn primary" id="cfg-save">Salvar</button></div>' +
 
-    '<div class="panel"><h3>Spotify Web API (opcional)</h3>' +
-    '<div class="form-row"><label>client_id</label><input type="text" id="cfg-sid" value="' + esc(cfg.spotify_client_id || '') + '"></div>' +
-    '<div class="form-row"><label>client_secret</label><input type="text" id="cfg-secret" value="' + esc(cfg.spotify_client_secret || '') + '"></div>' +
-    '<div class="hint">Sem credenciais o app lê a playlist pelo embed público do Spotify (até ~50 faixas). ' +
-    'Com credenciais (app grátis em developers.spotify.com) ele lê a lista inteira, com álbum e paginação.</div></div>' +
+    '<div class="panel"><h3>Spotify Web API (necessário para playlist inteira)</h3>' +
+    '<div class="form-row"><label>client_id</label><input type="text" id="cfg-sid" value="' + esc(cfg.spotify_client_id || '') + '" placeholder="cole aqui"></div>' +
+    '<div class="form-row"><label>client_secret</label><input type="text" id="cfg-secret" value="' + esc(cfg.spotify_client_secret || '') + '" placeholder="cole aqui"></div>' +
+    '<div class="hint"><b>Como obter (2 minutos, grátis):</b><br>' +
+    '1. Acesse <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:var(--accent)">developer.spotify.com/dashboard</a> e faça login com sua conta Spotify.<br>' +
+    '2. Clique em "Create app". Nome: qualquer (ex: Offplayer). Descrição: qualquer. Redirect URI: http://localhost:8722. Marque "Web API".<br>' +
+    '3. Abra o app criado → "Settings" → copie o "Client ID" e o "Client Secret" (clique em "View client secret").<br>' +
+    '4. Cole os dois campos acima e clique em "Salvar".<br>' +
+    '5. Reimporte a playlist. Agora ela carrega inteira (sem limite de 50).<br><br>' +
+    'Sem credenciais, o app usa o embed público do Spotify, que entrega no máximo ~50 faixas.</div></div>' +
 
     '<div class="panel"><h3>Motor</h3><div class="hint">' +
       'yt-dlp: ' + (deps.yt_dlp ? esc(deps.yt_dlp_version || 'instalado') : 'não instalado') + '<br>' +
@@ -466,10 +471,10 @@ els.importBtn.onclick = async () => {
   try {
     const result = await api('/api/import', { method: 'POST', body: JSON.stringify({ url, auto_download: true }) });
     const label = result.playlist ? result.playlist.title : '';
-    const via = result.resolver === 'api' ? 'API oficial' : (result.resolver === 'embed' ? 'embed público' : 'yt-dlp');
+    const via = result.resolver === 'api' ? 'API oficial (lista completa)' : (result.resolver === 'embed' ? 'embed público (~50 faixas)' : 'yt-dlp');
     let note = `playlist importada (${via}): ${label} — baixando`;
     if (result.truncated) {
-      note += ' | embed entrega no máximo ~50 faixas: preencha client_id/secret em Configurações para a lista completa';
+      note += ' | Para carregar a playlist inteira, adicione suas credenciais em Configurações (guia na página)';
     }
     toast(note);
     els.importUrl.value = '';

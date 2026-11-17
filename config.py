@@ -30,13 +30,6 @@ CONFIG_PATH = APP_DIR / "config.json"
 WEB_DIR = BUNDLE_DIR / "web"
 LOG_DIR = DATA_DIR / "logs"
 
-# Credenciais publicas do Spotify (usadas pelo spotdl e outros projetos OSS).
-# Permitem ler a playlist inteira sem o usuario cadastrar um app. Se forem revogadas
-# pelo Spotify, o app cai automaticamente para o embed publico (~50 faixas) e avisa.
-# O usuario pode sobrescrever com as proprias em Configuracoes.
-_DEFAULT_SPOTIFY_CLIENT_ID = "5f573c9620494bae87890c0f08a60293"
-_DEFAULT_SPOTIFY_CLIENT_SECRET = "212476d9b0f3472eaa762d90b19b0ba8"
-
 DEFAULTS: dict[str, Any] = {
     # where the downloaded audio lands
     "library_dir": str(Path.home() / "Music" / "Offplayer"),
@@ -53,9 +46,11 @@ DEFAULTS: dict[str, Any] = {
     "progress_throttle": 0.6,
     # how many candidates to inspect per search
     "search_candidates": 8,
-    # Spotify Web API credentials (public defaults for full playlist access)
-    "spotify_client_id": _DEFAULT_SPOTIFY_CLIENT_ID,
-    "spotify_client_secret": _DEFAULT_SPOTIFY_CLIENT_SECRET,
+    # Spotify Web API credentials (empty = use embed fallback, ~50 tracks)
+    # Cadastre um app gratis em https://developer.spotify.com/dashboard
+    # e cole client_id/client_secret em Configuracoes para carregar a playlist inteira.
+    "spotify_client_id": "",
+    "spotify_client_secret": "",
 }
 
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')

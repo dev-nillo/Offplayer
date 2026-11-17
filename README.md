@@ -44,9 +44,8 @@ catálogo é feita em três camadas (`core/meta.py`), nesta ordem:
 
 | Camada | Quando | Traz | Limite |
 |---|---|---|---|
-| **Spotify Web API (credenciais públicas)** | padrão — já vem configurado | lista inteira com paginação (100/página), álbum, artistas estruturados, ISRC | nenhum |
-| **Spotify Web API (suas credenciais)** | `client_id`/`client_secret` preenchidos em Configurações (sobrescreve as públicas) | lista inteira com paginação (100/página), álbum, artistas estruturados, ISRC | nenhum |
-| **Embed público do Spotify** | fallback quando a API falha (rate limit, credenciais revogadas) | título, artistas, duração, uri e capa | ~50 faixas |
+| **Spotify Web API (suas credenciais)** | `client_id`/`client_secret` preenchidos em Configurações | lista inteira com paginação (100/página), álbum, artistas estruturados, ISRC | nenhum |
+| **Embed público do Spotify** | padrão, sem credencial | título, artistas, duração, uri e capa | ~50 faixas |
 | **yt-dlp** | URL do YouTube / YouTube Music | lista completa, sem limite | — |
 
 Credenciais são opcionais: um app grátis em developers.spotify.com → *Settings → Settings →
