@@ -205,6 +205,11 @@ class Handler(BaseHTTPRequestHandler):
                 job_id = downloader.instance().enqueue_single(track_id, payload.get("youtube_id"))
                 self._send_json({"ok": True, "job": db.get_job(job_id)})
                 return
+            if route.startswith("/api/track/") and route.endswith("/candidates"):
+                track_id = route.split("/")[3]
+                candidates = downloader.instance().search_candidates(track_id)
+                self._send_json({"ok": True, "candidates": candidates})
+                return
             if route == "/api/settings":
                 cfg = config.save(payload.get("settings") or {})
                 self._send_json({"ok": True, "config": cfg})

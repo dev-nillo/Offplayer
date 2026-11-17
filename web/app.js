@@ -433,11 +433,7 @@ document.addEventListener('click', async (event) => {
 
   const retry = target.closest('[data-retry]');
   if (retry) {
-    try {
-      await api('/api/track/' + encodeURIComponent(retry.dataset.retry) + '/download', { method: 'POST', body: '{}' });
-      toast('re-busca enfileirada');
-      await refresh(true);
-    } catch (err) { toast(err.message, true); }
+    showCandidates(retry.dataset.retry);
     return;
   }
 
@@ -619,6 +615,66 @@ document.addEventListener('keydown', (event) => {
   else if (event.code === 'ArrowRight' && event.shiftKey) nextTrack(false);
   else if (event.code === 'ArrowLeft' && event.shiftKey) prevTrack();
 });
+
+/* ----------------------------------------------------------------- candidates */
+
+function showCandidates(trackId) {
+  const track = (S.state.tracks || []).find(t => t.id === trackId);
+  const title = track ? track.title : 'faixa';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal">' +
+    '<div class="modal-head"><h3>Escolher fonte — ' + esc(title) + '</h3>' +
+    '<button class="btn small" id="modal-close">✕</button></div>' +
+    '<div class="modal-body" id="modal-body"><div class="hint">buscando candidatos...</div></div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('#modal-close').onclick = close;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  (async () => {
+    try {
+      const result = await api('/api/track/' + encodeURIComponent(trackId) + '/candidates', { method: 'POST', body: '{}' });
+      const cands = result.candidates || [];
+      const body = document.getElementById('modal-body');
+      if (!cands.length) {
+        body.innerHTML = '<div class="empty">nenhum candidato encontrado</div>';
+        return;
+      }
+      body.innerHTML = cands.map((c, i) =>
+        '<div class="cand-row' + (c.is_topic ? ' cand-topic' : '') + '">' +
+        '<div class="cand-info">' +
+        '<div class="cand-title">' + esc(c.title) + '</div>' +
+        '<div class="cand-meta">' + esc(c.channel) + ' · ' + fmtTime(c.duration) +
+        (c.is_topic ? ' · <span class="state-done">Topic oficial</span>' : '') +
+        ' · score ' + c.score + '</div>' +
+        '</div>' +
+        '<button class="btn small primary" data-pick="' + esc(c.youtube_id) + '">Baixar esta</button>' +
+        '</div>'
+      ).join('');
+
+      body.querySelectorAll('[data-pick]').forEach(btn => {
+        btn.onclick = async () => {
+          btn.disabled = true;
+          btn.textContent = 'enfileirando...';
+          try {
+            await api('/api/track/' + encodeURIComponent(trackId) + '/download',
+              { method: 'POST', body: JSON.stringify({ youtube_id: btn.dataset.pick }) });
+            toast('download enfileirado com a fonte escolhida');
+            close();
+            await refresh(true);
+          } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = 'Baixar esta'; }
+        };
+      });
+    } catch (err) {
+      document.getElementById('modal-body').innerHTML =
+        '<div class="empty">' + esc(err.message) + '</div>';
+    }
+  })();
+}
 
 /* --------------------------------------------------------------------- boot */
 

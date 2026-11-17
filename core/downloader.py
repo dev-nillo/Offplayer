@@ -79,6 +79,68 @@ class Downloader:
         db.update_job(job_id, state="queued", message="na fila")
         return job_id
 
+    def search_candidates(self, track_id: str) -> list[dict[str, Any]]:
+        """Retorna os melhores candidatos (sem baixar) para o usuario escolher a fonte."""
+        track = db.get_track(track_id)
+        if not track:
+            raise KeyError("track não encontrada")
+        cfg = config.load()
+        details = meta_mod.track_details(track.get("source_url"), track["title"], track.get("artist"), cfg)
+        artist = details.get("artist") or track.get("artist")
+        title = details.get("title") or track["title"]
+        duration = details.get("duration") or track.get("duration")
+        prefer_topic = bool(cfg.get("prefer_topic", True))
+        candidates = int(cfg.get("search_candidates", 8))
+
+        # duas buscas: titulo+artista e titulo+artista+"official audio"
+        queries = [f"{artist} - {title}" if artist else title]
+        queries.append(f"{artist} {title} official audio" if artist else f"{title} official audio")
+
+        seen: set[str] = set()
+        all_entries: list[dict[str, Any]] = []
+        ydl_mod = _require_ytdlp()
+        opts = {
+            "quiet": True, "no_warnings": True, "noprogress": True,
+            "skip_download": True, "extract_flat": True,
+            "socket_timeout": 30, "retries": 5,
+            "http_headers": {"User-Agent": USER_AGENT},
+        }
+        for q in queries:
+            try:
+                with ydl_mod.YoutubeDL(opts) as ydl:
+                    info = ydl.extract_info(f"ytsearch{candidates}:{q}", download=False)
+            except Exception:
+                continue
+            for entry in (info.get("entries") or []):
+                if not entry or not entry.get("id"):
+                    continue
+                if entry["id"] in seen:
+                    continue
+                seen.add(entry["id"])
+                all_entries.append(entry)
+
+        if not all_entries:
+            return []
+
+        scored = []
+        for entry in all_entries:
+            sc = self._score(entry, title, artist, duration, prefer_topic)
+            scored.append((sc, entry))
+        scored.sort(key=lambda x: x[0], reverse=True)
+
+        result = []
+        for sc, entry in scored[:6]:
+            result.append({
+                "youtube_id": entry["id"],
+                "title": entry.get("title") or "",
+                "channel": entry.get("channel") or entry.get("uploader") or "",
+                "duration": entry.get("duration"),
+                "url": entry.get("webpage_url") or f"https://www.youtube.com/watch?v={entry['id']}",
+                "score": round(sc, 2),
+                "is_topic": (entry.get("channel") or "").lower().endswith("- topic"),
+            })
+        return result
+
     def enqueue_single(self, track_id: str, youtube_id: str | None = None) -> str:
         """Queue one track; `youtube_id` pins a manually picked source."""
         track = db.get_track(track_id)
@@ -273,29 +335,65 @@ class Downloader:
 
         channel = (entry.get("channel") or entry.get("uploader") or "").strip()
         channel_norm = _norm(channel)
-        if channel_norm.endswith("topic"):
-            score += 1.2 if prefer_topic else 0.4
+        title_lower = (entry.get("title") or "").lower()
+
+        # canal oficial "Artista - Topic" (audio oficial do YouTube Music)
+        is_topic = channel_norm.endswith("topic")
+        if is_topic:
+            score += 2.0 if prefer_topic else 0.6
+
+        # canal contem o nome do artista (sinal forte de fonte oficial)
         if artist:
             artist_norm = _norm(artist)
-            if artist_norm and (artist_norm in channel_norm or artist_norm in entry_title):
-                score += 0.8
+            artist_first = _norm(artist.split(",")[0])
+            if artist_first and artist_first in channel_norm:
+                score += 1.5
+            elif artist_norm and artist_norm in channel_norm:
+                score += 1.2
+            if artist_first and artist_first in entry_title:
+                score += 0.3
 
+        # duracao: tolerancia de 8% (ao vivo costuma ser +3-5%)
         length = entry.get("duration")
         if duration and length:
             delta = abs(float(length) - float(duration)) / max(float(duration), 1.0)
-            score += max(0.0, 1.0 - delta * 3.0)
+            if delta <= 0.08:
+                score += 1.5
+            elif delta <= 0.15:
+                score += 0.8
+            elif delta <= 0.25:
+                score += 0.2
+            else:
+                score -= 1.0
         elif duration and not length:
             score -= 0.5
 
-        lowered = (entry.get("title") or "").lower()
-        for noise in ("lyrics", "lyric video", "visualizer", "official video", "music video",
-                      "remix", "cover band", "karaoke", "reaction", "sped up", "slowed"):
-            if noise in lowered:
-                score -= 0.3
+        # audio oficial (sinal de fonte de qualidade)
+        if any(k in title_lower for k in ("official audio", "provided to youtube", "auto-generated", "audio oficial")):
+            score += 1.0
+
+        # penalidades pesadas: gravacoes de plateia / baixa qualidade
+        bad = ("crowd", "plateia", "audience", "fan recording", "fan cam", "fancam",
+               "cell phone", "celular", "mic recording", "poor quality", "low quality",
+               "lq audio", "bad quality", "raw audio", "bootleg", "leak", "snippet")
+        for noise in bad:
+            if noise in title_lower or noise in channel_norm:
+                score -= 2.5
+
+        # penalidades leves: versoes nao-desejadas (a menos que o original seja ao vivo)
+        want_live = any(k in _norm(title) for k in ("ao vivo", "live", "acustico", "acoustic"))
+        if "ao vivo" in title_lower or "live" in title_lower or "acoustic" in title_lower:
+            if want_live:
+                score += 0.5
+            else:
+                score -= 0.8
+        for noise in ("cover", "tribute", "karaoke", "instrumental", "backing track",
+                      "minus one", "reaction", "sped up", "slowed", "lyrics", "lyric video",
+                      "visualizer", "remix", "mashup", "nightcore"):
+            if noise in title_lower:
+                score -= 0.6
         if entry.get("is_live"):
-            score -= 1.0
-        if channel_norm.endswith("topic"):
-            score += 0.5
+            score -= 1.5
         return score
 
     def _fetch_audio(
