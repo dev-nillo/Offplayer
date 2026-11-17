@@ -1,0 +1,6 @@
+# nucleo do downloader
+yt-dlp>=2024.12.13
+# tags ID3/MP4
+mutagen>=1.47.0
+# binario ffmpeg embutido (fallback quando nao ha ffmpeg no PATH)
+imageio-ffmpeg>=0.5.1

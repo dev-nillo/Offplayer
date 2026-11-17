@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1ed760">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Offplayer">
+<title>Offplayer</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icon.svg">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span class="brand-name">Offline<em>Playlist</em></span>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-view="home"><span class="ico">⌂</span>Início</button>
+      <button class="nav-item" data-view="downloads"><span class="ico">↓</span>Baixados</button>
+      <button class="nav-item" data-view="settings"><span class="ico">⚙</span>Configurações</button>
+    </nav>
+
+    <div class="side-block">
+      <div class="side-title">Playlists <span id="side-count"></span></div>
+      <div id="playlist-nav" class="side-list"></div>
+    </div>
+
+    <div id="deps" class="deps"></div>
+  </aside>
+
+  <main id="main">
+    <header id="topbar">
+      <div class="import-box">
+        <input id="import-url" type="text" placeholder="Cole o link da playlist do Spotify (ou YouTube)">
+        <button id="import-btn" class="btn primary">Importar &amp; baixar</button>
+      </div>
+      <div class="search-box">
+        <input id="search" type="search" placeholder="Buscar na biblioteca">
+      </div>
+    </header>
+
+    <section id="view"></section>
+  </main>
+
+  <footer id="player">
+    <div class="now">
+      <div id="np-cover" class="np-cover"></div>
+      <div class="np-text">
+        <div id="np-title" class="np-title">Nada tocando</div>
+        <div id="np-artist" class="np-artist"></div>
+      </div>
+    </div>
+
+    <div class="transport">
+      <div class="buttons">
+        <button id="btn-shuffle" class="tbtn" title="Aleatório">⤨</button>
+        <button id="btn-prev" class="tbtn" title="Anterior">⏮</button>
+        <button id="btn-play" class="tbtn play" title="Tocar/Pausar">▶</button>
+        <button id="btn-next" class="tbtn" title="Próxima">⏭</button>
+        <button id="btn-repeat" class="tbtn" title="Repetir">⟳</button>
+      </div>
+      <div class="seek">
+        <span id="time-now" class="time">0:00</span>
+        <input id="seek" type="range" min="0" max="1000" value="0" step="1">
+        <span id="time-end" class="time">0:00</span>
+      </div>
+    </div>
+
+    <div class="volume">
+      <span class="ico">🔊</span>
+      <input id="volume" type="range" min="0" max="100" value="100">
+    </div>
+  </footer>
+</div>
+
+<div id="toast" class="toast"></div>
+<audio id="audio" preload="metadata"></audio>
+<script src="/static/app.js"></script>
+</body>
+</html>
